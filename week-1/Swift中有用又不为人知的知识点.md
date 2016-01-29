@@ -1,4 +1,4 @@
-本文会详细介绍一些Swift中不为大多数人知，又很有用的知识点。您不必一次性看完，不过或许哪一天这些知识就能派上用场，项目Demo在[我的github]()，您可以下载下来亲自实验一番，如果觉得有用还望点个star以示支持。
+本文会详细介绍一些Swift中不为大多数人知，又很有用的知识点。您不必一次性看完，不过或许哪一天这些知识就能派上用场，项目Demo在[我的github](https://github.com/bestswifter/MySampleCode/tree/master/SwiftMysterious)，您可以下载下来亲自实验一番，如果觉得有用还望点个star以示支持。
 
 本文主要的知识点有：
 
