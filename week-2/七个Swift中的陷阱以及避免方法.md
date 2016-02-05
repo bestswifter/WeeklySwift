@@ -6,7 +6,7 @@ Swift语言希望通过采用安全的编程模式去帮助开发者避免bug。
 
 一个Swift类可以去继承另一个类，这种能力是强大的。继承将使类之间的特定关系更加清晰，并且支持细粒度代码分享。但是，Swift中如果不是引用类型的话（如：结构体、枚举），就不能具有继承关系。然而，一个值类型可以继承协议，同时协议可以继承另一个协议。虽然协议除了类型信息外不能包含其他代码，但是协议扩展（`protocol extension`）可以包含代码。照这种方式，我们可以用继承树来实现代码的分享共用，树的叶子是值类型（结构体或枚举类），树的内部和根是协议和与他们对应的扩展。
 
-但是对于Swift协议扩展的实现，有一些新的和未开发的领域，存在一些问题。代码并不总是按照我们期望的那样执行。因为这些问题出现在值类型（结构体与枚举）与协议组合使用的场景下，我们将使用类与协议组合使用的例子去说明这种场景下不存在陷阱。当我们从新改作使用值类型和协议的时候将会发生令人惊奇的事。
+但是Swift协议扩展的实现依然是一片新的、未开发的领域，尚存在一些问题。代码并不总是按照我们期望的那样执行。因为这些问题出现在值类型（结构体与枚举）与协议组合使用的场景下，我们将使用类与协议组合使用的例子去说明这种场景下不存在陷阱。当我们重新改为使用值类型和协议的时候将会发生令人惊奇的事。
 
 开始介绍我们的例子：`classy pizza`
 
@@ -19,7 +19,7 @@ Swift语言希望通过采用安全的编程模式去帮助开发者避免bug。
 	class CornmealPizza  { let crustGrain: Grain = .Corn  }
 
 
-我们都可以通过属性取得`Pizza`所对应的原料
+我们可以通过`crustGrain `属性取得披萨所对应的原料
 
 	NewYorkPizza().crustGrain 	// returns Wheat
     ChicagoPizza().crustGrain 	// returns Wheat
@@ -42,13 +42,13 @@ Swift语言希望通过采用安全的编程模式去帮助开发者避免bug。
         override var crustGain: Grain { return .Corn }
 	}
 
-哎呀！这代码是错的，并且很幸运的编译器发现了这些错误。Can you？我们在第二个crustGain中少写了`r`。
+哎呀！这代码是错的，并且很幸运的是编译器发现了这些错误。你能发现这个错误么？我们在第二个crustGain中少写了`r`。Swift通过显式的标注`override`避免这种错误。比如在这个例子中，我们用到了`override`，但是拼写错误的"crustGain"其实并没有重写任何属性，下面是修改后的代码：
 
 	class CornmealPizza: Pizza {
    		 override var crustGrain: Grain { return .Corn }
 	}
 	
-现在编译运行：
+现在它可以通过编译并成功运行：
 
 	NewYorkPizza().crustGrain 		// returns Wheat
 	ChicagoPizza().crustGrain 		// returns Wheat
@@ -65,7 +65,7 @@ Swift语言希望通过采用安全的编程模式去帮助开发者避免bug。
 
 Swift的引用类型在这个Demo中工作的很好。但是如果这个程序涉及到并发性、竞争条件，我们可以使用值类型来避免这些。让我们来试一下值类型的Pizza吧！
 
-这里和上面一样简单，只需要把class修改为Struct即可：
+这里和上面一样简单，只需要把class修改为struct即可：
 	
 	enum Grain { case Wheat, Corn }
 	
@@ -89,7 +89,7 @@ Swift的引用类型在这个Demo中工作的很好。但是如果这个程序�
 	struct  ChicagoPizza: Pizza { }
 	struct CornmealPizza: Pizza {  let crustGain: Grain = .Corn }
 	
-编译下面代码：
+这段代码可以通过编译，我们来测试一下：
 
 	NewYorkPizza().crustGrain 		// returns Wheat
 	 ChicagoPizza().crustGrain 		// returns Wheat
@@ -99,9 +99,9 @@ Swift的引用类型在这个Demo中工作的很好。但是如果这个程序�
 `struct CornmealPizza: Pizza {  let crustGain: Grain = .Corn }`
 中的	`crustGrain`写成了`crustGain`，再一次忘记了`r`，但是对于值类型这里没有`override`关键字去帮助编译器去发现我们的错误。没有编译器的帮助，我们不得不更加小心的编写代码。
 
-> 规则：**在协议扩展中重写协议中的属性时要仔细核对（Double-check attribute names that override protocol extensions.）**
+> **⚠️ 在协议扩展中重写协议中的属性时要仔细核对**
 
-ok！让我们改正程序：
+ok，我们把这个拼写错误改正过来：
 
 	struct CornmealPizza: Pizza {  let crustGrain: Grain = .Corn }
 
@@ -109,7 +109,7 @@ ok！让我们改正程序：
 
 	 NewYorkPizza().crustGrain 		// returns Wheat
 	 ChicagoPizza().crustGrain 		// returns Wheat
-	 CornmealPizza().crustGrain 		// returns Corn  Hooray!	
+	 CornmealPizza().crustGrain 	// returns Corn  Hooray!	
 
 为了在讨论`Pizza`的时候不需要担心到底是`New York`, `Chicago`, 还是 `cornmeal`，我们可以使用`Pizza`协议作为变量的类型。
 
@@ -121,33 +121,35 @@ ok！让我们改正程序：
 	pie =  ChicagoPizza(); pie.crustGrain  // returns Wheat
 	pie = CornmealPizza(); pie.crustGrain  // returns Wheat    Not again?!
 
-为什么这个程序显示`cornmeal pizza` 包含`wheat`？Swift编译代码的时候忽略了变量的目前实际值。代码只能够使用编译时期的知道的信息，并不知道运行时期的具体信息。程序中可以在编译时期得到的信息是`pie`是`pizza`类型，`pizza`协议扩展返回`wheat`，所以在结构体`CornmealPizza`中的声明信息起不到任何作用。虽然编译器能够提醒静态调度中可能出现的错误，但是对于动态调度，编译器无能为力。这里粗心将带来巨大的陷阱。
+为什么这个程序显示`cornmeal pizza` 包含`wheat`？Swift编译代码的时候忽略了变量的目前实际值。代码只能够使用编译时期的知道的信息，并不知道运行时期的具体信息。程序中可以在编译时期得到的信息是`pie`是`pizza`类型，`pizza`协议扩展返回`wheat`，所以在结构体`CornmealPizza`中的重写起不到任何作用。虽然编译器本能够在使用静态调度替换动态调度时，为潜在的错误提出警告，但它实际上并没有这么做。这里的粗心将带来巨大的陷阱。
 
 在这种情况下，Swift提供一种解决方案，除了在协议扩展中（`extension`）定义`crustGrain `属性之外，还可以在协议中声明。
 	
 	protocol  Pizza {  var crustGrain: Grain { get }  }
 	extension Pizza {  var crustGrain: Grain { return .Wheat }  }
 
-这样编译器就需要在运行时起关注`pie`的值。
+在协议内声明变量并在协议拓展中定义，这样会告诉编译器关注变量`pie`运行时的值。
 
 在协议中一个属性的声明有两种不同的含义，静态还是动态调度，取决于是否这个属性在协议扩展中定义。
+
+补充了协议中变量的声明后，代码可以正常运行了：
 
 	pie =  NewYorkPizza();  pie.crustGrain	 // returns Wheat
 	pie =  ChicagoPizza();  pie.crustGrain	 // returns Wheat
 	pie = CornmealPizza();  pie.crustGrain	 // returns Corn    Whew!
 
 
->**在协议扩展中定义的每一个属性，需要在协议中进行声明（For every attribute defined in a protocol extension, declare it in the protocol itself.）**
+>⚠️ **在协议扩展中定义的每一个属性，需要在协议中进行声明**
 
 然而这个设法避免陷阱的方式并不总是有效的。
 
 **导入的协议不能够完全扩展。**
 
-框架（库）可以使一个程序导入接口去使用，而不必包含相关实现。例如苹果提供给我们提供了需要框架，实现了用户体验、系统设施和其他功能。Swift的扩展允许程序去添加自己的属性到导入的类、结构体、枚举和协议中。(这里的属性并不是存储属性)
+框架（库）可以使一个程序导入接口去使用，而不必包含相关实现。例如苹果提供给我们提供了需要框架，实现了用户体验、系统设施和其他功能。Swift的扩展允许程序向导入的类、结构体、枚举和协议中添加自己的属性(这里的属性并不是存储属性)。通过协议拓展添加的属性，就好像它原来就在协议中一样。但实际上定义在协议拓展中的属性并非一等公民，因为通过协议拓展无法添加属性的声明。
 
 对于具体类型（类、枚举、结构体），添加一个扩展属性和原本就定义的属性是一样的。但是在协议扩展中的属性并不是该协议的一等公民（`first-class citizen`），因为通过协议扩展添加声明是不可能的。
 
-让我们开始做一个框架，这个框架定义了Pizza协议和具体的类型
+我们首先实现一个框架，这个框架定义了Pizza协议和具体的类型
 
 	// PizzaFramework:
 	
@@ -157,7 +159,7 @@ ok！让我们改正程序：
 	public struct  ChicagoPizza: Pizza  { public init() {} }
 	public struct CornmealPizza: Pizza  { public init() {} }
 
-导入框架并且去扩展Pizza
+导入框架并且扩展Pizza
 
 	import PizzaFramework
 
@@ -166,23 +168,23 @@ ok！让我们改正程序：
 	extension Pizza         { var crustGrain: Grain { return .Wheat	} }
 	extension CornmealPizza { var crustGrain: Grain { return .Corn	} }
 	
-和以前一样，静态调度产生一个坏的答案
+和以前一样，静态调度产生一个错误的答案
 
 	var pie: Pizza = CornmealPizza()
 	pie.crustGrain                            // returns Wheat   Wrong!
 
-这个是因为（与刚才的解释一样）这个`crustGrain`属性并没有在协议中声明，而是只是在扩展中定义了。然而，我们没有办法对框架的代码进行修改，我们不能够解决这个问题。因此，想要通过扩展增加其他框架的协议属性是不安全的。
+这个是因为（与刚才的解释一样）这个`crustGrain`属性并没有在协议中声明，而是只是在扩展中定义。然而，我们没有办法对框架的代码进行修改，因此也就不能解决这个问题。因此，想要通过扩展增加其他框架的协议属性是不安全的。
 
-> **不要对导入的第三方协议进行属性扩展，那样可能需要动态调度（Do not extend an imported protocol with a new attribute that may need dynamic dispatch.）**
+> ⚠️ **不要对导入的协议进行扩展，新增可能需要动态调度的属性**
 
 
-正像刚才描述的那样，框架与协议扩展交互，限制了协议扩展的效用，但是框架并不是唯一的限制因素，同样，类型约束也不利于协议扩展。
+正像刚才描述的那样，框架与协议扩展之间的交互，限制了协议扩展的效用，但是框架并不是唯一的限制因素，同样，类型约束也不利于协议扩展。
 
 **Attributes in restricted protocol extensions: declaration is no longer enough**
 
 
 
-Pizza example：
+回顾一下此前Pizza的例子：
 
 	enum Grain { case Wheat, Corn }
 
@@ -193,19 +195,20 @@ Pizza example：
 	struct  ChicagoPizza: Pizza  { }
 	struct CornmealPizza: Pizza  { let crustGrain: Grain = .Corn }
 
-让我们用Pizza做一顿饭。不幸的，并不是所有进餐场景都会使用pizza，所以我们使用一个通用的结构体来适应各种情况。我们只需要传入一个参数就可以确定进餐的具体类型。
+让我们用Pizza做一顿饭。不幸的是，并不是每顿饭都会吃pizza，所以我们使用一个通用的`Meal`结构体来适应各种情况。我们只需要传入一个参数就可以确定进餐的具体类型。
 	
 	struct Meal: MealProtocol {
-    let mainDish: MainDishOfMeal
-}
+   		let mainDish: MainDishOfMeal
+	}
 
-结构体`Meal`继承自`MealProtocol`协议去测试`meal`是否包含谷蛋白。
+结构体`Meal`继承自`MealProtocol`协议，它可以测试`meal`是否包含谷蛋白。
 
 	protocol MealProtocol {
 	    typealias MainDish_OfMealProtocol
 	    var mainDish: MainDish_OfMealProtocol {get}
 	    var isGlutenFree: Bool {get}
 	}
+	
 为了避免中毒，代码中使用了默认值（不含有谷蛋白）
 
 	extension MealProtocol {
@@ -214,7 +217,7 @@ Pizza example：
 
 Swift中的 `Where`提供了一种方式去表达约束性协议扩展。当主菜是`pizza`的时候，我们知道`pizza`有`scrustGrain`属性，我们就可以访问这个属性。如果没`where`这里的限制，我们在不是`Pizza`的情况下访问`scrustGrain`是不安全的。
 
-		extension MealProtocol  where  MainDish_OfMealProtocol: Pizza {
+	extension MealProtocol  where  MainDish_OfMealProtocol: Pizza {
 	    var isGlutenFree: Bool  { return mainDish.crustGrain == .Corn }
 	}
 
@@ -227,10 +230,11 @@ Swift中的 `Where`提供了一种方式去表达约束性协议扩展。当主�
 结果：
 	
 	meal.isGlutenFree	// returns false
-	// But there is no gluten! Why can’t I have that pizza?	
+	// 根据协议拓展，理论上应该返回true	
 
-正像我们在前面小节演示的那样，当发生动态调度的时候，我们应该在协议中声明，并且在协议扩展中进行定义。但是约束性扩展的定义总是静态调度的。为了防止由于意外的静态调度而引起的bug
->**如果一个新的属性需要动态调度，避免使用约束性协议扩展(Avoid extending a protocol with a restriction if the new attribute might need dynamic dispatch.)**
+正像我们在前面小节演示的那样，当发生动态调度的时候，我们应该在协议中声明，并且在协议扩展中进行定义。但是约束性扩展的定义总是静态调度的。为了防止由于意外的静态调度而引起的bug：
+
+> ⚠️ **如果一个新的属性需要动态调度，避免使用约束性协议扩展**
 
 ## 使用可选链赋值和副作用
 
@@ -252,7 +256,7 @@ h?.x = n++
 
 变量n最终的值会取决于h是否为nil。如果h不为nil，那么赋值语句执行，`n++`也会执行。但如果h为nil，不仅赋值语句不会执行，`n++`也不会执行。为了避免没有发生副作用导致的令人惊讶的结果，我们应该：
 
-> 避免把一个有副作用的表达式的结果通过可选链赋值给等号左边的变量
+> ⚠️ **避免把一个有副作用的表达式的结果通过可选链赋值给等号左边的变量**
 
 ## 函数编程陷阱
 
@@ -331,7 +335,7 @@ print(grain)				// returns Wheat  What?!?
 
 inout参数在传入闭包的作用域外时会失效，所以：
 
-> 避免在闭包中使用inout参数
+> ⚠️ **避免在闭包中使用inout参数**
 
 这个问题在Swift文档中提到过，但还有一个与之相关的问题值得注意，这与创建的闭包的等价方法：柯里化有关。
 
@@ -364,7 +368,7 @@ grain				// returns Corn
 
 这说明在柯里化函数中，inout参数可以正常使用，但是显式的创建闭包时就不行了。
 
-> 避免在柯里化函数中使用inout参数，因为如果你后来将柯里化改为显式的创建闭包，这段代码就会产生错误
+> ⚠️ **避免在柯里化函数中使用inout参数，因为如果你后来将柯里化改为显式的创建闭包，这段代码就会产生错误**
 
 ## 总结：七个避免
 
