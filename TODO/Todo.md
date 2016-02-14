@@ -12,4 +12,3 @@
 
 1. [Range和Interval](http://oleb.net/blog/2015/09/swift-ranges-and-intervals/)
 2. [Swift中类的初始化过程](http://stackoverflow.com/questions/25126295/swift-class-does-not-implement-its-superclasss-required-members/32108404#32108404)
-3. [你可能用错了CGGeometry类型](https://medium.com/swift-programming/swift-cgrect-cgsize-cgpoint-5f4196da9cf8#.h8x9p7gpt)
